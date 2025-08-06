@@ -8,7 +8,7 @@ order: 2
 
 ## Utilities
 
-* [Calcolo Irpef Storico](/calcolo-irpef-storico/)
+* [Calcolo Irpef Storico](/utilities/calcolo-irpef-storico.html)
 
 🇮🇹 Tutti i programmi forniti sono da intendersi esclusivamente come esercizi di programmazione a titolo esemplificativo e didattico, privi di qualsiasi valore legale, vincolante o normativo, e sono forniti "così come sono", senza alcuna garanzia di funzionamento, accuratezza o aggiornamento.
 
