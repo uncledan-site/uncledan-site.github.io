@@ -55,6 +55,8 @@ author:
 menu:
   - title:             About
     url:               /about/
+  - title:             Baskin
+    url:               /baskin/
   - title:             Contatti
     url:               /contatti/
   - title:             File Archive
@@ -65,6 +67,8 @@ menu:
     url:               /guida-mp3/
   - title:             Hattrick Music
     url:               /frank70-hattrick-music/
+  - title:             Utilities
+    url:               /utilities/
 
 
 # Add links to the footer.
