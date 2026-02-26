@@ -41,13 +41,13 @@ keywords:              [web, linux, basket, tech, jeep]
 # A (square) logo for your site.
 # If provided, it will be shown at the top of the sidebar.
 # It also used by the `jekyll-seo-tag` plugin.
-logo:                  /assets/personal/logo_rounded_corners_512x512.png
+logo:                  /assets/personal/foto2025_512x512_RC.png
 
 # This should be the same author as first entry in `_data/authors.yml`.
 author:
   # Used by `jekyll-feed`:
   name:                Daniele Lolli (UncleDan)
-  email:               uncledan@danielelolli.it
+  email:               uncledan@uncledan.it
   # # Used by `jekyll-seo-tag`:
   twitter:             uncledan74
 
