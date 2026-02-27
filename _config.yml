@@ -4,8 +4,7 @@
 # IMPORTANT: Set the URL of your site.
 # Set to https://<username>.github.io when hosting on GitHub Pages
 # (unless you are using a custom domain).
-url:                   https://www.uncledan.it                         ### PRODUCTION ###
-###url:                   https://uncledan-hydejack-v9-0-4.netlify.app    ### STAGING ###
+url:                   uncledan-site.netlify.app
 
 # IMPORTANT: Set The "base URL" of your site.
 # When your site sits in a subdirectory, set to /<name of directory>
