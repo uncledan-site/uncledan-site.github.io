@@ -10,6 +10,7 @@ order: 2
 
 * [Calcolo Irpef Storico](https://uncledan.github.io/calcolo-irpef-storico/calcolo-irpef-storico.html)
 * [Generatore di password HTML](https://uncledan.github.io/passwordgenerator/password-generator-HTML.html)
+* [Calcolo codice fiscale (e altre utility)](https://uncledan.github.io/strumenti-di-utilita/strumenti-di-utilita.html)
 
 🇮🇹 Tutti i programmi forniti sono da intendersi esclusivamente come esercizi di programmazione a titolo esemplificativo e didattico, privi di qualsiasi valore legale, vincolante o normativo, e sono forniti "così come sono", senza alcuna garanzia di funzionamento, accuratezza o aggiornamento.
 
