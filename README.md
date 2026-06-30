@@ -6,9 +6,9 @@ This repository contains the configuration and source code for the website hoste
 
 ## Repository & Branching
 
-- **Repository:** `github.com/uncledan-site/uncledan-site.github.io`
-- **Active Production Branch:** `hydejack-v9.0.4`
-- **Published Build:** `hydejack-v9.0.4@18f1062`
+- **Repository:** [uncledan-site/uncledan-site.github.io](https://github.com/uncledan-site/uncledan-site.github.io)
+- **Active Production Branch:** [hydejack-v9.0.4](https://github.com/uncledan-site/uncledan-site.github.io/tree/hydejack-v9.0.4)
+- **Current State:** Always tracking the [latest commit](https://github.com/uncledan-site/uncledan-site.github.io/commits/hydejack-v9.0.4) on the production branch.
 
 ## Automation & Deployment
 
