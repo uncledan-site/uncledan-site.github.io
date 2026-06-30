@@ -1,0 +1,14 @@
+Suoni del Tabellone Baskin
+==========================
+
+horn.wav    - sirena / cicalino di fine tempo
+whistle.wav - fischietto da arbitro
+
+Questi file sono stati generati sinteticamente (numpy/scipy) appositamente per
+questo progetto e sono rilasciati in pubblico dominio con licenza:
+
+  CC0 1.0 Universal (Public Domain Dedication)
+  https://creativecommons.org/publicdomain/zero/1.0/
+
+Puoi usarli, modificarli e ridistribuirli liberamente, anche per scopi
+commerciali, senza obbligo di attribuzione.
