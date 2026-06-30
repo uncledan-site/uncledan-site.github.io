@@ -110,12 +110,19 @@
 
     </section>
 
+    <!-- ============ POSSESSO (sopra ai falli) ============ -->
+    <div class="possession" id="possession" hidden>
+      <span class="poss-arrow left" id="possLeft" role="button" tabindex="0" aria-label="Possesso Squadra 1">&#9664;</span>
+      <span class="poss-label">Possesso</span>
+      <span class="poss-arrow right" id="possRight" role="button" tabindex="0" aria-label="Possesso Squadra 2">&#9654;</span>
+    </div>
+
     <!-- ============ FALLI / BONUS ============ -->
     <footer class="fouls">
       <div class="fouls-head">
-        <span class="bonus-arrow left" id="bonusLeft" aria-hidden="true">&#9664;</span>
+        <span class="bonus-dot left" id="bonusLeft" aria-label="Bonus Squadra 1"></span>
         <span class="fouls-label">Falli</span>
-        <span class="bonus-arrow right" id="bonusRight" aria-hidden="true">&#9654;</span>
+        <span class="bonus-dot right" id="bonusRight" aria-label="Bonus Squadra 2"></span>
       </div>
       <div class="fouls-body">
         <button class="foul-btn only-game" type="button" data-team="0" data-delta="1" aria-label="Aggiungi fallo Squadra 1">+</button>
@@ -197,7 +204,7 @@
       <h2>Informazioni</h2>
       <div class="about">
         <p class="about-title">Tabellone Baskin</p>
-        <p class="about-meta">Versione <span id="aboutVersion">1.12.2</span> — Daniele Lolli (UncleDan)</p>
+        <p class="about-meta">Versione <span id="aboutVersion">1.13.1</span> — Daniele Lolli (UncleDan)</p>
       </div>
       <!-- verdi: installazione / aggiornamenti / sorgenti -->
       <button class="sheet-item green" id="actInstall" type="button" hidden>Installa app</button>
@@ -207,10 +214,9 @@
       <button class="sheet-item amber" id="actWake" type="button">Schermo sempre acceso: <span id="wakeState">off</span></button>
       <button class="sheet-item amber" id="actScoreColor" type="button">Punti colore squadra: <span id="scoreColorState">off</span></button>
       <button class="sheet-item amber" id="actMute" type="button">Audio: <span id="muteState">on</span></button>
-      <button class="sheet-item amber" id="actFouls" type="button">Conteggio falli: <span id="foulState">off</span></button>
       <!-- rosso scuro: azioni importanti -->
       <button class="sheet-item darkred" id="actSettings" type="button">Impostazioni partita</button>
-      <button class="sheet-item darkred" id="actNewGame" type="button">Nuova partita</button>
+      <button class="sheet-item darkred" id="actResetApp" type="button">Reset applicazione</button>
       <button class="sheet-item darkred" id="actQuit" type="button">Chiudi applicazione</button>
       <!-- sempre ultimo: chiude solo il menu -->
       <button class="sheet-close" id="moreClose" type="button">Chiudi menu</button>
@@ -221,6 +227,15 @@
   <div class="sheet-backdrop" id="settingsBackdrop" hidden>
     <div class="sheet" role="dialog" aria-label="Impostazioni partita">
       <h2>Impostazioni partita</h2>
+
+      <!-- Preset Baskin/Basket -->
+      <div class="sheet-row">
+        <button class="sheet-item green" id="presetBaskin" type="button">Baskin</button>
+        <button class="sheet-item green" id="presetBasket" type="button">Basket FIBA</button>
+      </div>
+
+      <!-- Sezione personalizzate -->
+      <h3 style="font-size: 0.9em; margin-top: 1em; color: #bdbdbd;">Personalizzate</h3>
 
       <label class="field">
         <span>Durata periodo (minuti)</span>
@@ -243,16 +258,28 @@
         <input type="number" id="cfgTimeoutsOt" min="0" max="9" inputmode="numeric" />
       </label>
       <label class="field">
-        <span>Limite falli per il bonus</span>
+        <span>Modalità bonus</span>
+        <select id="cfgBonusMode">
+          <option value="last2">Ultimi 2′ (Baskin)</option>
+          <option value="teamFouls">Dopo N falli (Basket)</option>
+          <option value="off">Nessuno</option>
+        </select>
+      </label>
+      <label class="field">
+        <span>Falli per il bonus (Basket)</span>
         <input type="number" id="cfgBonus" min="1" max="20" inputmode="numeric" />
       </label>
       <label class="field switch">
-        <span>Bonus automatico negli ultimi 2′ (4° e suppl.)</span>
-        <input type="checkbox" id="cfgAutoBonus" />
+        <span>Conteggio falli</span>
+        <input type="checkbox" id="cfgFouls" />
       </label>
       <label class="field switch">
         <span>Azzera i falli ad ogni periodo</span>
         <input type="checkbox" id="cfgResetFouls" />
+      </label>
+      <label class="field switch">
+        <span>Frecce possesso alternato</span>
+        <input type="checkbox" id="cfgPossession" />
       </label>
       <label class="field switch">
         <span>Sirena automatica a fine tempo</span>

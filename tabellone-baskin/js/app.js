@@ -5,7 +5,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.12.2';
+const APP_VERSION = '1.13.1';
 const STORE_KEY = 'baskin-tabellone-v1';
 
 /* Repository del codice sorgente (modifica l'URL se cambi repo) */
@@ -16,14 +16,31 @@ const DEFAULT_CONFIG = {
   minutes: 8,            // durata di un periodo regolamentare (quarto)
   overtimeMinutes: 4,    // durata di un tempo supplementare
   periods: 4,            // numero di periodi regolamentari
+  timeoutMode: 'baskin', // logica timeout: 'baskin' (riporto all'indietro) o 'fiba'
   timeoutsPerHalf: 2,    // timeout per squadra in ciascun tempo (meta' gara): 1 per quarto, riportabili nella coppia di quarti
   timeoutsOvertime: 1,   // timeout per squadra in ogni supplementare
-  bonus: 5,              // falli oltre i quali scatta il bonus
-  autoBonusLast2: true,  // bonus automatico negli ultimi 2' di Q4 e supplementari
+  bonusMode: 'last2',    // 'last2' (Baskin: ultimi 2'), 'teamFouls' (Basket: dopo N falli), 'off'
+  bonus: 5,              // soglia falli per il bonus (modalita' 'teamFouls')
   manualFouls: false,    // conteggio falli manuale (tasti +/-): default disattivato
+  possession: false,     // frecce possesso alternato (default off in Baskin)
   scoreTeamColor: false, // punteggio nel colore della squadra (default: verde)
   resetFoulsEachPeriod: true,
   autoHorn: true
+};
+
+/* Preset di disciplina: i pulsanti "Baskin"/"Basket FIBA" reimpostano i campi
+   di gara a questi valori (le opzioni personali come scoreTeamColor non cambiano). */
+const PRESET_BASKIN = {
+  minutes: 8, overtimeMinutes: 4, periods: 4,
+  timeoutMode: 'baskin', timeoutsPerHalf: 2, timeoutsOvertime: 1,
+  bonusMode: 'last2', bonus: 5, manualFouls: false, possession: false,
+  resetFoulsEachPeriod: true, autoHorn: true
+};
+const PRESET_BASKET_FIBA = {
+  minutes: 10, overtimeMinutes: 5, periods: 4,
+  timeoutMode: 'fiba', timeoutsPerHalf: 2, timeoutsOvertime: 1,
+  bonusMode: 'teamFouls', bonus: 4, manualFouls: true, possession: true,
+  resetFoulsEachPeriod: true, autoHorn: true
 };
 
 /* Durata (minuti / ms) del periodo indicato: i periodi oltre quelli
@@ -46,7 +63,17 @@ function phaseKey(period){
 }
 function timeoutPool(period){
   const c = state.config;
+  if(c.timeoutMode === 'fiba'){
+    if(period > c.periods) return 1;                 // ogni supplementare: 1
+    const half = Math.ceil(c.periods / 2);
+    return (period <= half) ? 2 : 3;                 // FIBA: 2 nel 1° tempo, 3 nel 2°
+  }
   return (period > c.periods) ? c.timeoutsOvertime : c.timeoutsPerHalf;
+}
+
+/* Siamo negli ultimi 2 minuti dell'ultimo periodo regolamentare? (regola FIBA) */
+function inLastTwoMinutes(){
+  return state.period === state.config.periods && state.remainingMs < 120000;
 }
 
 /* ---------- Stato della partita ---------- */
@@ -62,6 +89,9 @@ function freshState(cfg){
     scores: [0, 0],
     fouls: [0, 0],
     timeoutsUsed: [0, 0],
+    timeoutsLate: [0, 0],    // FIBA: timeout usati negli ultimi 2' dell'ultimo periodo
+    bonusActive: [false, false],  // bonus per squadra (modalita' 'teamFouls')
+    possession: [false, false],   // freccia possesso: [sinistra, destra]
     toPhase: 'h1',           // fase a cui si riferisce timeoutsUsed
     names: ['Squadra 1', 'Squadra 2'],
     colors: ['#ffffff', '#ffffff']   // colore della scritta nome, per squadra
@@ -74,10 +104,18 @@ function loadState(){
     if(raw){
       const s = JSON.parse(raw);
       s.config = { ...DEFAULT_CONFIG, ...(s.config || {}) };
+      // migrazione: vecchio flag autoBonusLast2 -> bonusMode
+      if(typeof s.config.bonusMode !== 'string'){
+        s.config.bonusMode = s.config.autoBonusLast2 === false ? 'off' : 'last2';
+      }
+      delete s.config.autoBonusLast2;
       s.running = false;            // non si riprende mai "in corsa"
       if(!Array.isArray(s.names)) s.names = ['Squadra 1','Squadra 2'];
       if(!Array.isArray(s.colors)) s.colors = ['#ffffff','#ffffff'];
       if(!Array.isArray(s.timeoutsUsed)) s.timeoutsUsed = [0,0];
+      if(!Array.isArray(s.timeoutsLate)) s.timeoutsLate = [0,0];
+      if(!Array.isArray(s.bonusActive)) s.bonusActive = [false,false];
+      if(!Array.isArray(s.possession)) s.possession = [false,false];
       if(typeof s.period !== 'number') s.period = 1;
       if(typeof s.toPhase !== 'string') s.toPhase = phaseKeyFor(s, s.period);
       return s;
@@ -341,6 +379,7 @@ function renderAll(){
     nameInputs[i].value = state.names[i];
   }
   updateBonus();
+  renderPossession();
   applyTeamColors();
 
   body.dataset.running = state.running ? 'true' : 'false';
@@ -357,40 +396,101 @@ function updateFoulLabel(){
   const el = $('#foulState'); if(el) el.textContent = state.config.manualFouls ? 'on' : 'off';
 }
 
-/* Bonus automatico negli ultimi 2' del quarto periodo regolamentare e di ogni
-   supplementare: in quel caso il bonus vale per entrambe le squadre senza
-   guardare il conteggio dei falli. */
+/* Bonus "ultimi 2'" (Baskin): negli ultimi 2' del 4° periodo e dei supplementari
+   vale per entrambe le squadre. */
 function autoBonusActive(){
   const c = state.config;
-  if(!c.autoBonusLast2) return false;
+  if(c.bonusMode !== 'last2') return false;
   const inFinalPhase = state.period >= c.periods;   // Q4 (== periods) o supplementari (> periods)
-  // il bonus scatta DOPO che scocca il 2:00: a 2:00.0 esatti ancora niente bonus
-  return inFinalPhase && state.remainingMs < 120000;
+  // il bonus si accende quando il cronometro NON mostra più 2:00 (cioè a 1:59):
+  // il display arrotonda per eccesso, quindi confrontiamo gli stessi secondi mostrati
+  const shownSeconds = Math.ceil(state.remainingMs / 1000);
+  return inFinalPhase && shownSeconds < 120;
 }
+
+/* Bonus "dopo N falli" (Basket/FIBA): per squadra, si accende quando i falli
+   raggiungono la soglia, ma solo a cronometro avviato; resta acceso (latch)
+   fino all'azzeramento dei falli (cambio periodo). */
+function updateTeamFoulBonus(){
+  const c = state.config;
+  if(c.bonusMode !== 'teamFouls') return;
+  if(!state.running) return;                 // si accende alla ripartenza del tempo
+  for(let t=0; t<2; t++){
+    if(state.fouls[t] >= c.bonus) state.bonusActive[t] = true;
+  }
+}
+
 function updateBonus(){
-  const auto = autoBonusActive();
-  // la freccia punta verso la squadra che TIRA (avversaria di chi e' in penalita');
-  // con bonus automatico si accendono entrambe.
-  bonusLeft.classList.toggle('active',  auto || state.fouls[1] >= state.config.bonus);
-  bonusRight.classList.toggle('active', auto || state.fouls[0] >= state.config.bonus);
+  const c = state.config;
+  let l = false, r = false, auto = false;
+  if(c.bonusMode === 'last2'){
+    auto = autoBonusActive();
+    l = r = auto;
+  } else if(c.bonusMode === 'teamFouls'){
+    l = !!state.bonusActive[0];
+    r = !!state.bonusActive[1];
+  }
+  bonusLeft.classList.toggle('active', l);    // pallino bonus squadra 1
+  bonusRight.classList.toggle('active', r);   // pallino bonus squadra 2
   body.classList.toggle('auto-bonus', auto);
+}
+
+/* ---------- Possesso alternato ---------- */
+function renderPossession(){
+  const on = !!state.config.possession;
+  const wrap = $('#possession');
+  if(wrap) wrap.hidden = !on;
+  if(!on) return;
+  $('#possLeft').classList.toggle('active', !!state.possession[0]);
+  $('#possRight').classList.toggle('active', !!state.possession[1]);
+}
+function tapPossession(side){
+  const i = (side === 'left') ? 0 : 1;
+  if(body.classList.contains('mode-edit')){
+    // in IMPOSTAZIONI: toggle indipendente (si puo' tornare anche a spento)
+    state.possession[i] = !state.possession[i];
+  } else {
+    // in OPERATIVA: accende quella toccata e spegne l'altra
+    state.possession = (side === 'left') ? [true, false] : [false, true];
+  }
+  renderPossession();
+  saveState();
 }
 
 /* Quanti timeout sono assegnabili "adesso" alla singola squadra:
    - primo quarto del tempo (Q1, Q3): massimo 1 (assegnando il primo si blocca il secondo)
    - secondo quarto del tempo (Q2, Q4): fino all'intero monte del tempo (riporto dal quarto precedente)
    - tempi supplementari: 1 ciascuno */
-function timeoutCap(period){
+/* Numero massimo di pallini assegnabili "adesso" per la singola squadra.
+   BASKIN: 1 nel primo quarto del tempo, monte pieno nel secondo (riporto
+   all'indietro entro la stessa metà); ogni supplementare = timeoutsOvertime.
+   FIBA: monte pieno della metà (2 nel 1° tempo, 3 nel 2°), ma negli ultimi 2'
+   dell'ultimo periodo al massimo 2 timeout possono essere chiamati in quella
+   finestra; ogni supplementare = 1. */
+function timeoutAssignableCap(period, team){
   const c = state.config;
+  if(c.timeoutMode === 'fiba'){
+    const pool = timeoutPool(period);
+    if(period > c.periods) return pool;              // supplementare: tutti (=1)
+    const half = Math.ceil(c.periods / 2);
+    const secondHalf = period > half;
+    if(secondHalf && inLastTwoMinutes()){
+      const late = (state.timeoutsLate && state.timeoutsLate[team]) || 0;
+      // già usati + quanti ancora chiamabili nella finestra (max 2)
+      return Math.min(pool, state.timeoutsUsed[team] + Math.max(0, 2 - late));
+    }
+    return pool;
+  }
+  // BASKIN
   if(period > c.periods) return c.timeoutsOvertime;
-  const firstOfHalf = ((period - 1) % 2) === 0;   // Q1, Q3 = primo quarto del tempo
+  const firstOfHalf = ((period - 1) % 2) === 0;      // Q1, Q3 = primo quarto del tempo
   return firstOfHalf ? 1 : c.timeoutsPerHalf;
 }
 
 function renderTimeouts(i){
   const total = timeoutPool(state.period);
   const lit = state.timeoutsUsed[i];   // numero di pallini accesi (timeout chiamati)
-  const cap = timeoutCap(state.period);
+  const cap = timeoutAssignableCap(state.period, i);
   const gameMode = !body.classList.contains('mode-edit');
   const wrap = elTO[i];
   wrap.innerHTML = '';
@@ -419,6 +519,8 @@ function startClock(){
   state.running = true;
   tickBase = state.remainingMs;
   tickStart = performance.now();
+  updateTeamFoulBonus();      // Basket: il bonus si accende alla ripartenza
+  updateBonus();
   lastAutoBonus = autoBonusActive();
   lastTickSave = performance.now();
   body.dataset.running = 'true';
@@ -475,6 +577,7 @@ function addPoints(team, pts){
 function addFoul(team, delta){
   if(!state.config.manualFouls) return;
   state.fouls[team] = Math.max(0, state.fouls[team] + delta);
+  updateTeamFoulBonus();   // se a crono avviato e raggiunta la soglia, accende il bonus
   renderAll();
   saveState();
 }
@@ -487,6 +590,7 @@ function tapTimeout(team){
     let n = state.timeoutsUsed[team] + 1;
     if(n > pool) n = 0;
     state.timeoutsUsed[team] = n;
+    if(n === 0 && state.timeoutsLate) state.timeoutsLate[team] = 0;
   } else {
     // in OPERATIVA: il timeout si assegna solo a cronometro fermo
     if(state.running){
@@ -494,9 +598,14 @@ function tapTimeout(team){
       return;
     }
     // assegna solo se disponibile, altrimenti fischio + popup
-    const cap = timeoutCap(state.period);
+    const cap = timeoutAssignableCap(state.period, team);
     if(state.timeoutsUsed[team] < cap){
       state.timeoutsUsed[team] += 1;
+      // FIBA: conta i timeout chiamati negli ultimi 2' (max 2 in quella finestra)
+      if(state.config.timeoutMode === 'fiba' && inLastTwoMinutes()){
+        if(!Array.isArray(state.timeoutsLate)) state.timeoutsLate = [0,0];
+        state.timeoutsLate[team] += 1;
+      }
     } else {
       whistle();
       toast('Timeout non disponibile');
@@ -514,8 +623,8 @@ function applyPeriod(p, resetTime){
   // i timeout si riportano dentro la stessa meta' gara; si azzerano al cambio
   // fase (inizio seconda meta', ogni supplementare)
   const newPhase = phaseKey(p);
-  if(newPhase !== state.toPhase){ state.timeoutsUsed = [0,0]; state.toPhase = newPhase; }
-  if(state.config.resetFoulsEachPeriod){ state.fouls = [0,0]; }
+  if(newPhase !== state.toPhase){ state.timeoutsUsed = [0,0]; state.timeoutsLate = [0,0]; state.toPhase = newPhase; }
+  if(state.config.resetFoulsEachPeriod){ state.fouls = [0,0]; state.bonusActive = [false,false]; }
   // il tempo si ricarica solo se richiesto esplicitamente (es. "periodo successivo"):
   // cambiando manualmente il numero del periodo il tempo NON si azzera.
   if(resetTime && !state.running){ state.remainingMs = periodFullMs(p); }
@@ -768,17 +877,23 @@ function applyPeriodEditor(){
 }
 
 /* --- impostazioni partita --- */
-function openSettings(){
-  const c = state.config;
+let pendingTimeoutMode = 'baskin';
+function fillSettingsForm(c){
   $('#cfgMinutes').value = c.minutes;
   $('#cfgPeriods').value = c.periods;
   $('#cfgOvertime').value = c.overtimeMinutes;
   $('#cfgTimeoutsHalf').value = c.timeoutsPerHalf;
   $('#cfgTimeoutsOt').value = c.timeoutsOvertime;
   $('#cfgBonus').value = c.bonus;
-  $('#cfgAutoBonus').checked = !!c.autoBonusLast2;
+  $('#cfgBonusMode').value = (c.bonusMode === 'teamFouls' || c.bonusMode === 'off') ? c.bonusMode : 'last2';
   $('#cfgResetFouls').checked = !!c.resetFoulsEachPeriod;
+  $('#cfgFouls').checked = !!c.manualFouls;
+  $('#cfgPossession').checked = !!c.possession;
   $('#cfgAutoHorn').checked = !!c.autoHorn;
+  pendingTimeoutMode = (c.timeoutMode === 'fiba') ? 'fiba' : 'baskin';
+}
+function openSettings(){
+  fillSettingsForm(state.config);
   openSheet('settingsBackdrop');
 }
 function saveSettings(){
@@ -793,18 +908,48 @@ function saveSettings(){
   state.config.timeoutsPerHalf = num('#cfgTimeoutsHalf', 2, 0, 9);
   state.config.timeoutsOvertime = num('#cfgTimeoutsOt', 1, 0, 9);
   state.config.bonus    = num('#cfgBonus', 5, 1, 20);
-  state.config.autoBonusLast2 = $('#cfgAutoBonus').checked;
+  const bm = $('#cfgBonusMode').value;
+  state.config.bonusMode = (bm === 'teamFouls' || bm === 'off') ? bm : 'last2';
   state.config.resetFoulsEachPeriod = $('#cfgResetFouls').checked;
+  state.config.manualFouls = $('#cfgFouls').checked;
+  state.config.possession = $('#cfgPossession').checked;
   state.config.autoHorn = $('#cfgAutoHorn').checked;
+  state.config.timeoutMode = (pendingTimeoutMode === 'fiba') ? 'fiba' : 'baskin';
+  if(!state.config.manualFouls){ state.fouls = [0,0]; }   // falli off: azzera i contatori
+  if(state.config.bonusMode !== 'teamFouls'){ state.bonusActive = [false,false]; }
+  if(!state.config.possession){ state.possession = [false,false]; }
   // ricalibra i timeout gia' segnati sul nuovo monte della fase corrente
   const pool = timeoutPool(state.period);
   state.timeoutsUsed[0] = Math.min(state.timeoutsUsed[0], pool);
   state.timeoutsUsed[1] = Math.min(state.timeoutsUsed[1], pool);
   if(!state.running){ state.remainingMs = periodFullMs(state.period); }
   closeSheet('settingsBackdrop');
+  applyFoulMode();
+  updateFoulLabel();
   renderAll();
   saveState();
   toast('Impostazioni salvate');
+}
+
+/* Applica un preset di disciplina ai campi del form (non salva: serve "Salva") */
+function applyPreset(preset){
+  // mantiene durata/periodo correnti? no: il preset reimposta tutti i campi di gara
+  const merged = { ...state.config, ...preset };
+  fillSettingsForm(merged);
+  toast(preset.timeoutMode === 'fiba' ? 'Preset Basket FIBA (poi Salva)' : 'Preset Baskin (poi Salva)');
+}
+
+/* Reset applicazione: riporta TUTTO ai valori predefiniti (Baskin) */
+function resetApp(){
+  stopClock();
+  state = freshState(DEFAULT_CONFIG);
+  pendingTimeoutMode = 'baskin';
+  closeSheet('settingsBackdrop');
+  applyFoulMode();
+  updateFoulLabel();
+  renderAll();
+  saveState();
+  toast('Applicazione azzerata');
 }
 
 /* --- toast --- */
@@ -986,11 +1131,13 @@ function toggleScoreColor(){
 onActivate($('#btnMore'), ()=>{ updateMuteLabel(); updateFoulLabel(); updateScoreColorLabel(); openSheet('moreBackdrop'); });
 onActivate($('#moreClose'), ()=> closeSheet('moreBackdrop'));
 onActivate($('#actCheckUpdate'), checkForUpdates);
-onActivate($('#actFouls'), toggleManualFouls);
 onActivate($('#actScoreColor'), toggleScoreColor);
 onActivate($('#actMute'), toggleMute);
-onActivate($('#actNewGame'), ()=>{ closeSheet('moreBackdrop'); if(confirm('Iniziare una nuova partita? Punteggi, falli e timeout verranno azzerati.')) newGame(); });
 onActivate($('#actSettings'), ()=>{ closeSheet('moreBackdrop'); openSettings(); });
+onActivate($('#actResetApp'), ()=>{
+  closeSheet('moreBackdrop');
+  if(confirm('Reset applicazione: azzera punteggi, falli, timeout, possesso, nomi e riporta le impostazioni ai valori Baskin. Procedere?')) resetApp();
+});
 
 /* chiudi l'applicazione (PWA): salva e prova a chiudere la finestra */
 onActivate($('#actQuit'), ()=>{
@@ -1019,6 +1166,12 @@ onActivate($('#actInstall'), async ()=>{
 /* impostazioni */
 onActivate($('#settingsSave'), saveSettings);
 onActivate($('#settingsClose'), ()=> closeSheet('settingsBackdrop'));
+onActivate($('#presetBaskin'), ()=> applyPreset(PRESET_BASKIN));
+onActivate($('#presetBasket'), ()=> applyPreset(PRESET_BASKET_FIBA));
+
+/* frecce possesso */
+onActivate($('#possLeft'), ()=> tapPossession('left'));
+onActivate($('#possRight'), ()=> tapPossession('right'));
 
 /* editor tempo (rotori) */
 onActivate($('#timeApply'), ()=>{ stopClock(); applyTimeEditor(); });

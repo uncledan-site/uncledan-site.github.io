@@ -234,23 +234,50 @@ body.mode-edit #btnPlay{ opacity:.35; pointer-events:none; }
 }
 .fouls-head{ display:flex; align-items:center; gap: clamp(10px,2.4vw,28px); }
 .fouls-label{ font-weight: 800; font-size: clamp(20px, 4.6vh, 46px); }
-.bonus-arrow{
-  color: var(--bonus-off);
-  font-size: clamp(22px, 5vh, 50px);
-  line-height: 1;
-  transition: color .15s ease, text-shadow .15s ease;
+/* bonus a pallini (uno per squadra): spento = anello tenue, acceso = rosso pieno */
+.bonus-dot{
+  width: clamp(16px, 3.4vh, 34px);
+  height: clamp(16px, 3.4vh, 34px);
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: inset 0 0 0 3px var(--bonus-off);
+  transition: background .15s ease, box-shadow .15s ease;
 }
-.bonus-arrow.active{ color: var(--red); text-shadow: 0 0 10px rgba(255,43,43,.7); }
+.bonus-dot.active{
+  background: var(--red);
+  box-shadow: 0 0 12px rgba(255,43,43,.7);
+}
 
-/* bonus automatico negli ultimi 2': enfasi sull'etichetta e arrow pulsanti */
+/* bonus automatico negli ultimi 2': enfasi sull'etichetta e pallini pulsanti */
 body.auto-bonus .fouls-label::after{
   content: " · BONUS";
   color: var(--red);
   font-size: .6em;
   letter-spacing: .04em;
 }
-body.auto-bonus .bonus-arrow.active{ animation: bonusPulse 1s ease-in-out infinite; }
+body.auto-bonus .bonus-dot.active{ animation: bonusPulse 1s ease-in-out infinite; }
 @keyframes bonusPulse{ 0%,100%{ opacity:1; } 50%{ opacity:.45; } }
+
+/* ---- Possesso alternato (sopra ai falli) ---- */
+.possession{
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(10px, 2.4vw, 28px);
+  padding-top: clamp(2px, .8vh, 10px);
+}
+.possession[hidden]{ display:none; }
+.poss-label{ font-weight: 800; font-size: clamp(15px, 3.4vh, 32px); letter-spacing:.02em; }
+.poss-arrow{
+  color: var(--bonus-off);
+  font-size: clamp(20px, 4.6vh, 44px);
+  line-height: 1;
+  cursor: pointer;
+  user-select: none;
+  transition: color .15s ease, text-shadow .15s ease;
+}
+.poss-arrow.active{ color: var(--green); text-shadow: 0 0 10px rgba(30,230,58,.7); }
 
 .fouls-body{ display:flex; align-items:center; gap: clamp(8px,1.8vw,22px); }
 /* contatori e tasti falli visibili solo col conteggio falli attivo */
