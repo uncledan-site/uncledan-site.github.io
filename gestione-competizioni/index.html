@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="it" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#1a56a0">
+<title>Gestione Competizioni Baskin</title>
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="manifest" href="manifest.json">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap');
+
+[data-theme="light"] {
+  --md-primary:       #1a56a0;
+  --md-on-primary:    #ffffff;
+  --md-primary-c:     #d6e4ff;
+  --md-on-primary-c:  #001e40;
+  --md-secondary:     #535f70;
+  --md-on-secondary:  #ffffff;
+  --md-secondary-c:   #d7e3f7;
+  --md-on-secondary-c:#101c2b;
+  --md-tertiary:      #6b5778;
+  --md-tertiary-c:    #f2daff;
+  --md-error:         #ba1a1a;
+  --md-error-c:       #ffdad6;
+  --md-surface:       #f8f9fc;
+  --md-surface-c:     #edf1f8;
+  --md-surface-v:     #dde3ea;
+  --md-on-surface:    #191c20;
+  --md-on-surface-v:  #41484d;
+  --md-outline:       #71787e;
+  --md-outline-v:     #c1c7ce;
+  --md-inv-surface:   #2e3135;
+  --md-inv-on-surface:#f0f0f4;
+  --md-shadow:        0 1px 2px rgba(0,0,0,.12), 0 0 0 1px rgba(0,0,0,.06);
+  --md-shadow-md:     0 2px 8px rgba(0,0,0,.14), 0 0 0 1px rgba(0,0,0,.06);
+  --md-shadow-lg:     0 4px 16px rgba(0,0,0,.18);
+  --md-amber:         #b45309;
+  --md-amber-c:       #fef3c7;
+  --md-green:         #166534;
+  --md-green-c:       #dcfce7;
+  --md-radius:        12px;
+  --md-radius-sm:     8px;
+  --md-radius-full:   999px;
+}
+
+[data-theme="dark"] {
+  --md-primary:       #a8c8ff;
+  --md-on-primary:    #003060;
+  --md-primary-c:     #004887;
+  --md-on-primary-c:  #d6e4ff;
+  --md-secondary:     #bbc7db;
+  --md-on-secondary:  #253140;
+  --md-secondary-c:   #3b4858;
+  --md-on-secondary-c:#d7e3f7;
+  --md-tertiary:      #d8bee6;
+  --md-tertiary-c:    #523f5f;
+  --md-error:         #ffb4ab;
+  --md-error-c:       #93000a;
+  --md-surface:       #111318;
+  --md-surface-c:     #1d2024;
+  --md-surface-v:     #252a2f;
+  --md-on-surface:    #e2e2e6;
+  --md-on-surface-v:  #8d9199;
+  --md-outline:       #8b9198;
+  --md-outline-v:     #41484d;
+  --md-inv-surface:   #e2e2e6;
+  --md-inv-on-surface:#2e3135;
+  --md-shadow:        0 1px 2px rgba(0,0,0,.4);
+  --md-shadow-md:     0 2px 8px rgba(0,0,0,.5);
+  --md-shadow-lg:     0 4px 16px rgba(0,0,0,.6);
+  --md-amber:         #fbbf24;
+  --md-amber-c:       #451a03;
+  --md-green:         #4ade80;
+  --md-green-c:       #052e16;
+  --md-radius:        12px;
+  --md-radius-sm:     8px;
+  --md-radius-full:   999px;
+}
+
+*{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:'Noto Sans',system-ui,sans-serif;
+  background:var(--md-surface);
+  min-height:100vh;color:var(--md-on-surface);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:24px;
+  transition:background .2s,color .2s;
+}
+.logo{font-size:48px;margin-bottom:16px}
+h1{
+  font-size:22px;font-weight:700;letter-spacing:1px;
+  color:var(--md-on-surface);text-align:center;margin-bottom:6px;
+}
+.sub{
+  font-size:12px;color:var(--md-on-surface-v);letter-spacing:2px;
+  text-align:center;margin-bottom:24px;font-weight:600;
+}
+.stable-badge{
+  display:inline-block;margin:0 auto 24px;padding:4px 14px;
+  background:var(--md-green-c);color:var(--md-green);
+  border:1px solid var(--md-green);
+  border-radius:var(--md-radius-full);font-size:11px;font-weight:700;letter-spacing:1px;
+}
+.moduli{display:flex;flex-direction:column;gap:14px;width:100%;max-width:440px}
+.modulo{
+  display:flex;align-items:center;gap:16px;
+  background:var(--md-surface-c);border:1.5px solid var(--md-outline-v);
+  border-radius:var(--md-radius);padding:18px 22px;
+  text-decoration:none;color:inherit;box-shadow:var(--md-shadow);
+  transition:border-color .15s,background .15s,box-shadow .15s;
+  cursor:pointer;
+}
+.modulo:hover{border-color:var(--md-primary);box-shadow:var(--md-shadow-md)}
+.modulo-icon{font-size:28px;flex-shrink:0}
+.modulo-info{flex:1}
+.modulo-nome{font-size:16px;font-weight:700;color:var(--md-on-surface);margin-bottom:3px}
+.modulo-desc{font-size:11px;color:var(--md-on-surface-v);letter-spacing:.5px}
+.modulo-anno{
+  font-size:11px;color:var(--md-primary);font-weight:700;
+  background:var(--md-primary-c);border:1px solid var(--md-primary);
+  border-radius:var(--md-radius-full);padding:3px 10px;flex-shrink:0;
+}
+.modulo.disabled{opacity:.4;cursor:not-allowed;pointer-events:none}
+
+.footer{margin-top:40px;font-size:10px;color:var(--md-outline);letter-spacing:1.5px;text-align:center}
+.footer .ver-line{margin-top:4px;color:var(--md-outline-v)}
+
+/* ── Tema toggle ── */
+.tema-row{display:flex;gap:8px;margin-top:24px}
+.tema-btn{
+  padding:8px 16px;border-radius:var(--md-radius-full);
+  border:1.5px solid var(--md-outline-v);background:var(--md-surface-c);
+  color:var(--md-on-surface-v);font-size:12px;font-weight:600;cursor:pointer;
+  font-family:'Noto Sans',system-ui,sans-serif;
+  transition:border-color .15s,color .15s,background .15s;
+}
+.tema-btn.active{border-color:var(--md-primary);color:var(--md-primary);background:var(--md-primary-c)}
+
+/* ── Pulsanti azione ── */
+.action-btn{
+  margin-top:12px;padding:10px 24px;
+  background:var(--md-surface);border:1.5px solid var(--md-outline-v);
+  border-radius:var(--md-radius-full);color:var(--md-on-surface-v);
+  font-family:'Noto Sans',system-ui,sans-serif;font-size:12px;font-weight:600;
+  letter-spacing:.5px;cursor:pointer;
+  transition:border-color .15s,color .15s;
+}
+.action-btn:hover{border-color:var(--md-primary);color:var(--md-primary)}
+.action-btn.checking{border-color:var(--md-amber);color:var(--md-amber)}
+.action-btn.updated{border-color:var(--md-green);color:var(--md-green)}
+#install-btn{display:none;border-color:var(--md-primary);color:var(--md-primary)}
+#sw-status{margin-top:12px;font-size:10px;color:var(--md-on-surface-v);letter-spacing:1px}
+
+/* ── Toast aggiornamento (stile notif-card) ── */
+#update-toast{
+  display:none;position:fixed;top:24px;left:50%;transform:translateX(-50%);
+  background:var(--md-primary-c);color:var(--md-on-surface);
+  border:1.5px solid var(--md-primary);
+  padding:12px 20px;border-radius:var(--md-radius);
+  font-size:13px;font-weight:600;
+  box-shadow:var(--md-shadow-lg);
+  z-index:9999;cursor:pointer;align-items:center;gap:10px;white-space:nowrap;
+}
+#update-toast.visible{display:flex}
+#update-toast:hover{background:var(--md-primary);color:var(--md-on-primary)}
+</style>
+<script>
+/* Applica tema PRIMA del render per evitare flash */
+(function(){
+  var t=localStorage.getItem('tema')||'auto';
+  var dark=t==='dark'||(t==='auto'&&window.matchMedia('(prefers-color-scheme:dark)').matches);
+  document.documentElement.setAttribute('data-theme',dark?'dark':'light');
+})();
+</script>
+</head>
+<body>
+
+<div class="logo">🏀</div>
+<h1>Gestione Competizioni</h1>
+<div class="sub">BASKIN · UNCLEDAN.IT</div>
+<div class="stable-badge">✓ VERSIONE STABILE</div>
+
+<div class="moduli" id="moduli-list">
+  <!-- Popolato da JS -->
+</div>
+
+<div class="tema-row">
+  <button class="tema-btn" onclick="impostaTema('light')" id="tema-light">☀️ Chiaro</button>
+  <button class="tema-btn" onclick="impostaTema('auto')"  id="tema-auto">🌗 Auto</button>
+  <button class="tema-btn" onclick="impostaTema('dark')"  id="tema-dark">🌙 Scuro</button>
+</div>
+
+<button id="install-btn" class="action-btn">⬇ Installa App</button>
+<button id="check-update-btn" class="action-btn" onclick="verificaAggiornamenti()">🔄 Verifica aggiornamenti</button>
+<div id="sw-status"></div>
+
+<div class="footer">
+  <div>Launcher v 3.1 · 2026 · uncledan.it</div>
+  <div class="ver-line">sw.js v 3.1 · manifest v 1.3</div>
+</div>
+
+<div id="update-toast" onclick="applicaAggiornamento()">
+  🔄 <span id="toast-msg">Aggiornamento disponibile</span>
+  <span style="opacity:.7;font-size:11px">Tocca per aggiornare</span>
+</div>
+
+<script>
+// Percorsi relativi alla cartella corrente — portabile su qualsiasi base URL
+
+// ── Tema ──────────────────────────────────────────────────────────────────
+function impostaTema(tema){
+  localStorage.setItem('tema', tema);
+  applicaTema(tema);
+}
+function applicaTema(tema){
+  const dark = tema==='dark' || (tema==='auto' && window.matchMedia('(prefers-color-scheme:dark)').matches);
+  document.documentElement.setAttribute('data-theme', dark?'dark':'light');
+  ['light','auto','dark'].forEach(t=>{
+    const b=document.getElementById('tema-'+t);
+    if(b) b.classList.toggle('active', t===tema);
+  });
+}
+function inizializzaTema(){
+  const saved=localStorage.getItem('tema')||'auto';
+  applicaTema(saved);
+  window.matchMedia('(prefers-color-scheme:dark)').addEventListener('change',()=>{
+    if(localStorage.getItem('tema')==='auto') applicaTema('auto');
+  });
+}
+
+async function verificaAggiornamenti(){
+  const btn = document.getElementById('check-update-btn');
+  btn.textContent = '🔄 Controllo in corso...';
+  btn.className = 'action-btn checking';
+  try {
+    const cached  = await caches.match(`${BASE}/versions.json`);
+    const current = cached ? await cached.json() : null;
+
+    const res = await fetch(`versions.json?_=${Date.now()}`);
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const remote = await res.json();
+
+    const launcherVer = '3.1';
+    const KNOWN_VERSIONS = {
+      'finali.html':    '3.1',
+      'pwa/index.html': launcherVer,
+      'sw.js':          '3.1',
+      'manifest.json':  '1.3',
+    };
+
+    if(!current){
+      const remoteVer = remote['pwa/index.html'];
+      if(remoteVer && remoteVer !== launcherVer){
+        mostraToast('Aggiornamento disponibile — ricarica la pagina');
+        btn.textContent = '⬆ Aggiornamento disponibile';
+      } else {
+        btn.textContent = '✓ Tutto aggiornato';
+        btn.className = 'action-btn updated';
+        setTimeout(()=>{ btn.textContent='🔄 Verifica aggiornamenti'; btn.className='action-btn'; },3000);
+      }
+      return;
+    }
+
+    const baseline = current || KNOWN_VERSIONS;
+    const diff = Object.entries(remote).filter(([k,v]) => baseline[k] !== v);
+
+    if(diff.length === 0){
+      btn.textContent = '✓ Tutto aggiornato';
+      btn.className = 'action-btn updated';
+      setTimeout(()=>{ btn.textContent='🔄 Verifica aggiornamenti'; btn.className='action-btn'; },3000);
+    } else {
+      const cmp=(a,b)=>{
+        const pa=String(a).split('.').map(Number),pb=String(b).split('.').map(Number);
+        for(let i=0;i<Math.max(pa.length,pb.length);i++){const x=pa[i]||0,y=pb[i]||0;if(x!==y)return x<y?-1:1;}
+        return 0;
+      };
+      const isDowngrade=diff.some(([k,v])=>baseline[k]&&cmp(v,baseline[k])<0);
+      if(isDowngrade){
+        const lista=diff.map(([k,v])=>`${k}: ${baseline[k]} → ${v}`).join('\n');
+        const ok=confirm('⚠ DOWNGRADE RILEVATO\n\nLe versioni online sono più vecchie di quelle installate:\n\n'+lista+'\n\nProcedere con il downgrade?');
+        if(!ok){btn.textContent='✕ Annullato';btn.className='action-btn';setTimeout(()=>{btn.textContent='🔄 Verifica aggiornamenti';},3000);return;}
+        mostraToast('Downgrade in corso — ricarica per applicare');
+        btn.textContent='⬇ Downgrade...';
+      } else {
+        mostraToast(`Aggiornamento disponibile (${diff.length} file)`);
+        btn.textContent=`⬆ ${diff.length} aggiornament${diff.length>1?'i':'o'}`;
+      }
+      btn.className='action-btn';
+      if('serviceWorker' in navigator){
+        const reg=await navigator.serviceWorker.getRegistration(`${BASE}/`);
+        if(reg)await reg.update();
+      }
+    }
+  } catch(err){
+    btn.textContent = '⚠ Errore verifica';
+    btn.className = 'action-btn';
+    setTimeout(()=>{ btn.textContent='🔄 Verifica aggiornamenti'; },3000);
+  }
+}
+
+const MODULI = [
+  {
+    id: 'finali-2026',
+    nome: 'Finali Nazionali',
+    desc: 'Sorteggio gironi · Designazioni arbitrali · Risultati',
+    anno: '2026',
+    versione: '3.1',
+    file: 'finali.html',
+    icon: '🏆',
+    attivo: true,
+  },
+];
+
+function renderModuli() {
+  const el = document.getElementById('moduli-list');
+  el.innerHTML = MODULI.map(m => `
+    <a class="modulo${m.attivo?'':' disabled'}" href="${m.attivo ? m.file : '#'}">
+      <span class="modulo-icon">${m.icon}</span>
+      <div class="modulo-info">
+        <div class="modulo-nome">${m.nome}</div>
+        <div class="modulo-desc">${m.desc}</div>
+        ${m.versione?`<div style="font-size:9px;color:var(--md-outline);margin-top:3px">v ${m.versione}</div>`:''}
+      </div>
+      <span class="modulo-anno">${m.anno}</span>
+    </a>`
+  ).join('');
+}
+
+let _newWorker = null;
+function mostraToast(msg){
+  const t = document.getElementById('update-toast');
+  if(msg) document.getElementById('toast-msg').textContent = msg;
+  t.classList.add('visible');
+}
+function applicaAggiornamento(){
+  if(_newWorker) _newWorker.postMessage({type:'SKIP_WAITING'});
+  else window.location.reload();
+}
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js', { scope: './' })
+    .then(reg => {
+      document.getElementById('sw-status').textContent = '✓ Offline disponibile';
+      if(reg.waiting){ _newWorker = reg.waiting; mostraToast('Aggiornamento disponibile'); }
+      reg.addEventListener('updatefound', () => {
+        const nw = reg.installing;
+        nw.addEventListener('statechange', () => {
+          if(nw.state === 'installed' && navigator.serviceWorker.controller){
+            _newWorker = nw;
+            mostraToast('Aggiornamento disponibile');
+          }
+        });
+      });
+    })
+    .catch(() => { document.getElementById('sw-status').textContent = '⚠ Offline non disponibile'; });
+
+  let refreshing = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if(!refreshing){ refreshing=true; window.location.reload(); }
+  });
+}
+
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('install-btn').style.display = 'inline-block';
+});
+document.getElementById('install-btn').addEventListener('click', async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  if (outcome === 'accepted')
+    document.getElementById('install-btn').style.display = 'none';
+});
+window.addEventListener('appinstalled', () => {
+  document.getElementById('install-btn').style.display = 'none';
+});
+
+renderModuli();
+inizializzaTema();
+</script>
+</body>
+</html>
