@@ -3,7 +3,7 @@
    Cache-first per il funzionamento completamente offline.
    Aggiornare CACHE_NAME ad ogni rilascio per forzare l'aggiornamento.
    ===================================================================== */
-const CACHE_NAME = 'baskin-tabellone-v1.13.2';
+const CACHE_NAME = 'baskin-tabellone-v1.13.3';
 
 const ASSETS = [
   './',
@@ -25,7 +25,11 @@ self.addEventListener('message', (event)=>{
 
 self.addEventListener('install', (event)=>{
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)).then(()=> self.skipWaiting())
+    caches.open(CACHE_NAME).then(cache =>
+      // 'reload' forza il prelievo dalla rete (ignora la cache HTTP del browser),
+      // così la nuova versione NON viene popolata con i file vecchi: niente hard reset
+      cache.addAll(ASSETS.map(u => new Request(u, { cache: 'reload' })))
+    ).then(()=> self.skipWaiting())
   );
 });
 

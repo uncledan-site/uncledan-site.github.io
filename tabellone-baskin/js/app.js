@@ -5,7 +5,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.13.2';
+const APP_VERSION = '1.13.3';
 const STORE_KEY = 'baskin-tabellone-v1';
 
 /* Repository del codice sorgente (modifica l'URL se cambi repo) */
@@ -1275,7 +1275,9 @@ if('serviceWorker' in navigator){
   });
 
   window.addEventListener('load', ()=>{
-    navigator.serviceWorker.register('service-worker.js').then(reg=>{
+    navigator.serviceWorker.register('service-worker.js', { updateViaCache: 'none' }).then(reg=>{
+      // controlla subito se c'è una nuova versione (senza attendere il ciclo del browser)
+      reg.update().catch(()=>{});
       // se all'avvio c'è già una versione in attesa, attivala
       if(reg.waiting && navigator.serviceWorker.controller){
         reg.waiting.postMessage({ type:'SKIP_WAITING' });
@@ -1291,5 +1293,12 @@ if('serviceWorker' in navigator){
         });
       });
     }).catch(()=>{});
+  });
+
+  // ricontrolla gli aggiornamenti quando si torna sull'app
+  document.addEventListener('visibilitychange', ()=>{
+    if(document.visibilityState === 'visible'){
+      navigator.serviceWorker.getRegistration().then(reg=>{ if(reg) reg.update().catch(()=>{}); }).catch(()=>{});
+    }
   });
 }
