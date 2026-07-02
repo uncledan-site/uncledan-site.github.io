@@ -542,6 +542,18 @@ a.sheet-link{ display:block; text-decoration:none; }
   color: #bdbdbd;
   font-size: clamp(14px, 4vw, 19px);
 }
+.rotate-install{
+  margin-top: clamp(8px, 2vh, 18px);
+  padding: clamp(10px,2.4vh,16px) clamp(20px,6vw,34px);
+  font-size: clamp(15px, 4.4vw, 20px);
+  font-weight: 800;
+  color: #fff;
+  background: #2e9e4f;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+}
+.rotate-install:active{ background: #268043; }
 @media (prefers-reduced-motion: reduce){
   .rotate-ico{ animation: none; }
 }

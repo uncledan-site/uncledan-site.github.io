@@ -5,7 +5,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.13.1';
+const APP_VERSION = '1.13.2';
 const STORE_KEY = 'baskin-tabellone-v1';
 
 /* Repository del codice sorgente (modifica l'URL se cambi repo) */
@@ -992,10 +992,37 @@ window.addEventListener('beforeunload', saveState);
    INSTALL PROMPT
    ===================================================================== */
 let deferredPrompt = null;
+
+function isStandalone(){
+  return window.matchMedia('(display-mode: standalone)').matches
+      || window.matchMedia('(display-mode: fullscreen)').matches
+      || window.navigator.standalone === true;
+}
+function updateInstallButtons(){
+  const show = !!deferredPrompt && !isStandalone();
+  const a = $('#actInstall');    if(a) a.hidden = !show;
+  const b = $('#rotateInstall'); if(b) b.hidden = !show;
+}
+async function doInstall(){
+  if(deferredPrompt){
+    deferredPrompt.prompt();
+    try{ await deferredPrompt.userChoice; }catch(_){}
+    deferredPrompt = null;
+    updateInstallButtons();
+  } else {
+    // browser senza supporto a beforeinstallprompt (es. iOS/Firefox) o gia' installata
+    toast('Usa il menu del browser: "Installa app" / "Aggiungi a schermata Home"');
+  }
+}
 window.addEventListener('beforeinstallprompt', (e)=>{
   e.preventDefault();
   deferredPrompt = e;
-  $('#actInstall').hidden = false;
+  updateInstallButtons();
+});
+window.addEventListener('appinstalled', ()=>{
+  deferredPrompt = null;
+  updateInstallButtons();
+  toast('App installata');
 });
 
 /* =====================================================================
@@ -1158,10 +1185,8 @@ onActivate($('#actQuit'), ()=>{
   }
 }
 onActivate($('#actWake'), toggleWake);
-onActivate($('#actInstall'), async ()=>{
-  closeSheet('moreBackdrop');
-  if(deferredPrompt){ deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt = null; $('#actInstall').hidden = true; }
-});
+onActivate($('#actInstall'), ()=>{ closeSheet('moreBackdrop'); doInstall(); });
+onActivate($('#rotateInstall'), doInstall);
 
 /* impostazioni */
 onActivate($('#settingsSave'), saveSettings);
